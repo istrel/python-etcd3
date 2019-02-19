@@ -319,7 +319,7 @@ class Etcd3Client(object):
         Get a range of keys.
 
         :param range_start: first key in range
-        :param range_end: last key in range
+        :param range_end: last key in range (not included in response)
         :returns: sequence of (value, metadata) tuples
         """
         range_request = self._build_get_range_request(
@@ -481,6 +481,33 @@ class Etcd3Client(object):
         delete_request = self._build_delete_request(
             prefix,
             range_end=utils.increment_last_byte(utils.to_bytes(prefix))
+        )
+        return self.kvstub.DeleteRange(
+            delete_request,
+            self.timeout,
+            credentials=self.call_credentials,
+            metadata=self.metadata
+        )
+
+    @_handle_errors
+    def delete_range(self, range_start, range_end):
+        """
+        Delete a range of keys.
+
+        :param range_start: first key in range (i.e. first deleted key)
+        :param range_end: last key in range (i.e. first not deleted key)
+        :returns: a response containing a header and number of deleted keys
+
+        .. code-block:: python
+
+            >>> import etcd3
+            >>> etcd = etcd3.client()
+            >>> deleted_count = etcd.delete_range('/thing/foo', '/thing_spam').deleted
+
+        """
+        delete_request = self._build_delete_request(
+            key=range_start,
+            range_end=range_end
         )
         return self.kvstub.DeleteRange(
             delete_request,

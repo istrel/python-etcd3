@@ -213,6 +213,40 @@ class TestEtcd3(object):
         v, _ = etcd.get('/foo/2')
         assert v is None
 
+    def test_delete_range(self, etcd):
+        etcdctl('put', '/foo/a', 'a')
+        etcdctl('put', '/foo/b', 'b')
+        etcdctl('put', '/foo/c', 'c')
+        etcdctl('put', '/foo/d', 'd')
+        etcdctl('put', '/foo/e', 'e')
+
+        v, _ = etcd.get('/foo/a')
+        assert v is b'a'
+
+        v, _ = etcd.get('/foo/b')
+        assert v is b'b'
+
+        v, _ = etcd.get('/foo/c')
+        assert v is b'c'
+
+        v, _ = etcd.get('/foo/d')
+        assert v is b'd'
+
+        response = etcd.delete_range(range_start='/foo/b', range_end='/foo/d')
+        assert response.deleted == 2
+
+        v, _ = etcd.get('/foo/a')
+        assert v is b'a'
+
+        v, _ = etcd.get('/foo/b')
+        assert v is None
+
+        v, _ = etcd.get('/foo/c')
+        assert v is None
+
+        v, _ = etcd.get('/foo/d')
+        assert v is b'd'
+
     def test_watch_key(self, etcd):
         def update_etcd(v):
             etcdctl('put', '/doot/watch', v)
