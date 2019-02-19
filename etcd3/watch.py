@@ -34,12 +34,13 @@ class Watch(object):
 
 class Watcher(object):
 
-    def __init__(self, watchstub, timeout=None, call_credentials=None,
+    def __init__(self, watchstub, client_closed_event, timeout=None, call_credentials=None,
                  metadata=None):
         self.timeout = timeout
         self._watch_stub = watchstub
         self._credentials = call_credentials
         self._metadata = metadata
+        self._client_closed_event = client_closed_event
 
         self._lock = threading.Lock()
         self._request_queue = queue.Queue(maxsize=10)
@@ -108,7 +109,7 @@ class Watcher(object):
             self._cancel_no_lock(watch_id)
 
     def _run(self):
-        while True:
+        while not self._client_closed_event.is_set():
             response_iter = self._watch_stub.Watch(
                 _new_request_iter(self._request_queue),
                 credentials=self._credentials,

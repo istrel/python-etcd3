@@ -104,6 +104,7 @@ class Etcd3Client(object):
                  ca_cert=None, cert_key=None, cert_cert=None, timeout=None,
                  user=None, password=None, grpc_options=None):
 
+        self._closed = threading.Event()
         self._url = '{host}:{port}'.format(host=host, port=port)
         self.metadata = None
 
@@ -159,6 +160,7 @@ class Etcd3Client(object):
         self.kvstub = etcdrpc.KVStub(self.channel)
         self.watcher = watch.Watcher(
             etcdrpc.WatchStub(self.channel),
+            client_closed_event=self._closed,
             timeout=self.timeout,
             call_credentials=self.call_credentials,
             metadata=self.metadata
@@ -170,6 +172,7 @@ class Etcd3Client(object):
 
     def close(self):
         """Call the GRPC channel close semantics."""
+        self._closed.set()
         self.channel.close()
 
     def __enter__(self):
